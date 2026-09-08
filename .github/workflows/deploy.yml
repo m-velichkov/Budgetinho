@@ -37,7 +37,12 @@ jobs:
       - run: npm test
       - run: npm run build
 
+      # enablement: true turns Pages on via the API on the first run, so there
+      # is no manual 'Settings -> Pages -> Source: GitHub Actions' step. It is
+      # a no-op once Pages is already enabled.
       - uses: actions/configure-pages@v5
+        with:
+          enablement: true
       - uses: actions/upload-pages-artifact@v3
         with:
           path: dist
