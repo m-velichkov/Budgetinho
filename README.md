@@ -18,7 +18,7 @@ npm run dev      # http://localhost:5173
 | `npm run dev` | Dev server with hot reload |
 | `npm run build` | Typecheck, then build to `dist/` |
 | `npm run preview` | Serve the production build locally |
-| `npm test` | Run the test suite once (75 tests) |
+| `npm test` | Run the test suite once (122 tests) |
 | `npm run test:watch` | Tests in watch mode |
 | `npm run typecheck` | TypeScript only |
 
@@ -109,10 +109,15 @@ src/
 
   api/
     gist.ts        The only network code: pull/push/create/verify + conflicts.
+    gist.test.ts   29 tests with fetch stubbed: every request it builds and
+                   every response it can receive, including each error code.
 
   store/
     store.ts       All actions and state transitions -- the app's API surface.
     hooks.ts       React bindings, hash router, period auto-advance.
+    sync.test.ts   18 tests for what the app DOES with the gist: conflict
+                   refusal, credential isolation, failed pulls leaving local
+                   data intact, migrating an older device's document.
 
   components/      Reusable UI (category card, sheets, charts, form controls).
   screens/         Dashboard, Add, Reports, Transactions, Settings.

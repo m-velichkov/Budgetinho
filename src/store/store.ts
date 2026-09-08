@@ -400,15 +400,22 @@ function describeSyncError(err: unknown): string {
 }
 
 function recordSyncSuccess(updatedAt: string, extra: Partial<BudgetState> = {}): void {
+  // A pull brings the other device's settings with it, so start from those when
+  // they are supplied. Only the gist credentials and sync stamps are always
+  // this device's own -- they must never travel between phones.
+  const base = extra.settings ?? snapshot.data.settings;
   const settings: Settings = {
-    ...snapshot.data.settings,
+    ...base,
     gist: {
       ...snapshot.data.settings.gist,
       lastSyncedGistUpdatedAt: updatedAt,
       lastSyncedAt: nowStamp(),
     },
   };
-  commit({ ...snapshot.data, ...extra, settings }, { keepPeriod: true });
+  // A pulled change to the start day re-slices the calendar, so the visible
+  // period has to be re-derived rather than kept.
+  const startDayChanged = base.periodStartDay !== snapshot.data.settings.periodStartDay;
+  commit({ ...snapshot.data, ...extra, settings }, { keepPeriod: !startDayChanged });
 }
 
 /** Push local state to the shared gist. Refuses on conflict unless forced. */
@@ -451,11 +458,8 @@ export async function pullFromGist(): Promise<boolean> {
       categories: state.categories,
       transactions: state.transactions,
       assignments: state.assignments,
-      settings: {
-        ...state.settings,
-        // Sync credentials stay device-local.
-        gist: snapshot.data.settings.gist,
-      },
+      // recordSyncSuccess keeps this device's gist credentials.
+      settings: state.settings,
     });
     setSync({ busy: false, lastResult: 'Pulled the latest budget from the gist.' });
     for (const n of notices) notify('info', n);
