@@ -40,6 +40,8 @@ The repo ships a workflow that builds, tests and publishes on every push to `mai
    git push -u origin main
    ```
 2. In the repo: **Settings → Pages → Build and deployment → Source: GitHub Actions**.
+   This one-time step cannot be automated from the workflow — until it is done,
+   the `configure-pages` step fails with a 404 and the deploy job is skipped.
 3. Push (or run the workflow manually from the Actions tab). The URL appears in the workflow summary — typically `https://<you>.github.io/<repo>/`.
 
 There is nothing else to configure: no secrets, no environment variables, no base-path edit. `vite.config.ts` uses `base: './'`, so the same build works at a user site, a project subpath, or a custom domain. If you ever need absolute asset URLs, set `BASE_PATH=/<repo>/` in the build environment.
