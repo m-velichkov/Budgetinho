@@ -44,6 +44,15 @@
   --radius-sm: 10px;
   --gap: 12px;
   --nav-height: 62px;
+  /*
+   * Bottom-nav geometry. The notch and the button are both derived from these,
+   * so they stay concentric: the button's centre sits exactly on the bar's top
+   * edge, and the hole is its radius plus a ring of clearance.
+   */
+  --fab-size: 56px;
+  --fab-gap: 5px;
+  --fab-hole: calc(var(--fab-size) / 2 + var(--fab-gap));
+  --fab-lift: calc(var(--nav-height) - var(--fab-size) / 2);
 
   --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
   --font-num: 'SF Mono', ui-monospace, 'Segoe UI Mono', 'Roboto Mono', Menlo, monospace;
@@ -104,7 +113,7 @@ button {
 
 .screen {
   flex: 1;
-  padding: 14px 14px calc(var(--nav-height) + env(safe-area-inset-bottom, 0px) + 20px);
+  padding: 14px 14px calc(var(--nav-height) + env(safe-area-inset-bottom, 0px) + 44px);
 }
 
 .screen-header {
@@ -671,8 +680,18 @@ button {
   pointer-events: auto;
   background: rgba(27, 25, 23, 0.97);
   backdrop-filter: blur(10px);
-  -webkit-mask-image: radial-gradient(circle 34px at 50% 0, transparent 0 33px, #000 34px);
-  mask-image: radial-gradient(circle 34px at 50% 0, transparent 0 33px, #000 34px);
+  -webkit-mask-image: radial-gradient(
+    circle calc(var(--fab-hole) + 1px) at 50% 0,
+    transparent 0 var(--fab-hole),
+    #000 calc(var(--fab-hole) + 1px)
+  );
+  mask-image: radial-gradient(
+    circle calc(var(--fab-hole) + 1px) at 50% 0,
+    transparent 0 var(--fab-hole),
+    #000 calc(var(--fab-hole) + 1px)
+  );
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
   filter: drop-shadow(0 -1px 0 var(--border));
 }
 
@@ -706,9 +725,10 @@ button {
 /* The raised centre CTA. No label -- the shape and colour carry it. */
 .bottom-nav > button.nav-add {
   flex: 0 0 auto;
-  width: 56px;
-  height: 56px;
-  margin: 0 6px;
+  width: var(--fab-size);
+  height: var(--fab-size);
+  /* Keep the tabs clear of the hole, which is wider than the button. */
+  margin: 0 calc(var(--fab-gap) + 4px);
   border-radius: 50%;
   background: var(--accent);
   color: var(--accent-ink);
@@ -716,8 +736,12 @@ button {
   font-weight: 400;
   line-height: 1;
   gap: 0;
-  /* Lift it into the notch. */
-  transform: translateY(-16px);
+  /*
+   * Lift the button until its centre lands on the bar's top edge, which is
+   * where the mask's circle is centred. Anything less and the bar closes back
+   * in around the button's lower half.
+   */
+  transform: translateY(calc(var(--fab-lift) * -1));
   box-shadow: 0 6px 18px rgba(0, 0, 0, 0.45);
 }
 
@@ -738,7 +762,7 @@ button {
   position: fixed;
   left: 50%;
   transform: translateX(-50%);
-  bottom: calc(var(--nav-height) + env(safe-area-inset-bottom, 0px) + 12px);
+  bottom: calc(var(--nav-height) + env(safe-area-inset-bottom, 0px) + var(--fab-size) / 2 + 14px);
   z-index: 40;
   width: min(94vw, 690px);
   display: flex;
