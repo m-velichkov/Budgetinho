@@ -14,7 +14,7 @@ import { formatShort } from '../domain/date';
 import { validateGoalInput } from '../data/validation';
 import { setAssignment, setCategoryGoal } from '../store/store';
 import { useApp } from '../store/hooks';
-import { Field, Modal, Segmented } from './ui';
+import { Field, Modal, Segmented, useSaveState } from './ui';
 import type { CategoryView } from '../domain/budget';
 import type { Goal } from '../data/schema';
 
@@ -54,6 +54,8 @@ export function CategorySheet({
     [data.transactions, view.category.id, period.start, period.end],
   );
 
+  const assignSave = useSaveState(amountDirty);
+
   const saveAssignment = () => {
     const cents = amount.trim() === '' ? 0 : parseAmount(amount);
     if (cents === null) {
@@ -66,6 +68,7 @@ export function CategorySheet({
     }
     setAmountError(undefined);
     setAssignment(periodKey, view.category.id, cents);
+    assignSave.markSaved();
   };
 
   /** Quick actions stage a value in the field; Save still commits it. */
@@ -150,8 +153,13 @@ export function CategorySheet({
         ) : null}
       </div>
 
-      <button type="button" className="btn primary block" disabled={!amountDirty} onClick={saveAssignment}>
-        {amountDirty ? 'Save assignment' : 'Saved'}
+      <button
+        type="button"
+        className="btn primary block"
+        disabled={assignSave.disabled}
+        onClick={saveAssignment}
+      >
+        {assignSave.label === 'Saved' ? 'Saved' : 'Save assignment'}
       </button>
 
       <div className="divider" />

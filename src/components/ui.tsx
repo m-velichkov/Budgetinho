@@ -1,6 +1,6 @@
 /** Small shared building blocks. No component library, no runtime deps. */
 
-import { useEffect, useId, useRef, type ReactNode } from 'react';
+import { useEffect, useId, useRef, useState, type ReactNode } from 'react';
 import { dismissNotice } from '../store/store';
 import { useApp } from '../store/hooks';
 
@@ -190,4 +190,23 @@ export function EmptyState({ title, body, action }: { title: string; body: strin
       {action}
     </div>
   );
+}
+
+/**
+ * Save-button state. The label reads "Save" until you have actually saved
+ * something in this session, and reverts as soon as the draft diverges again --
+ * a disabled button on a pristine form should not claim you saved anything.
+ */
+export function useSaveState(dirty: boolean): { label: string; disabled: boolean; markSaved: () => void } {
+  const [saved, setSaved] = useState(false);
+
+  useEffect(() => {
+    if (dirty) setSaved(false);
+  }, [dirty]);
+
+  return {
+    label: saved && !dirty ? 'Saved' : 'Save',
+    disabled: !dirty,
+    markSaved: () => setSaved(true),
+  };
 }

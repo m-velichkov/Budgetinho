@@ -27,7 +27,7 @@
   /* Accents */
   --accent: #f0a868; /* peach-orange: primary CTA only */
   --accent-ink: #35200f; /* text on the peach button */
-  --accent-2: #2dd4bf; /* teal: safe-to-spend, active nav */
+  --accent-2: #2dd4bf; /* teal: positive amounts, secondary highlights */
 
   /* Category status: full-card pastel tints */
   --green-bg: #c9f4dc;
@@ -51,17 +51,47 @@
    */
   --fab-size: 56px;
   --fab-gap: 5px;
+  /* How far the button's centre sits BELOW the bar's top edge. The mask circle
+     is centred on the same point, so changing this moves the button and its
+     notch together. */
+  --fab-drop: 9px;
   --fab-hole: calc(var(--fab-size) / 2 + var(--fab-gap));
-  --fab-lift: calc(var(--nav-height) - var(--fab-size) / 2);
+  --fab-lift: calc(var(--nav-height) - var(--fab-size) / 2 - var(--fab-drop));
 
   --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-  --font-num: 'SF Mono', ui-monospace, 'Segoe UI Mono', 'Roboto Mono', Menlo, monospace;
+  /*
+   * Amounts use the UI font with tabular figures, not a monospace stack.
+   * tabular-nums keeps digits in aligned columns -- the only job monospace had
+   * here -- without its full-cell spaces, which left a visibly oversized gap
+   * between an amount and its currency.
+   */
+  --font-num: var(--font);
 
   color-scheme: dark;
 }
 
 * {
   box-sizing: border-box;
+  /* Kill the blue flash iOS/Android paint over anything tapped. */
+  -webkit-tap-highlight-color: transparent;
+}
+
+/*
+ * Long-pressing a control should not select its text or raise the OS
+ * callout menu. Text content stays selectable -- only the chrome opts out.
+ */
+button,
+a,
+.cat-card,
+.list-row,
+.bottom-nav,
+.segmented,
+.icon-button,
+img,
+svg {
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
 }
 
 html,
@@ -493,6 +523,7 @@ button {
 
 .input.amount {
   font-family: var(--font-num);
+  font-variant-numeric: tabular-nums;
   font-size: 26px;
   font-weight: 650;
   min-height: 58px;
@@ -681,12 +712,12 @@ button {
   background: rgba(27, 25, 23, 0.97);
   backdrop-filter: blur(10px);
   -webkit-mask-image: radial-gradient(
-    circle calc(var(--fab-hole) + 1px) at 50% 0,
+    circle calc(var(--fab-hole) + 1px) at 50% var(--fab-drop),
     transparent 0 var(--fab-hole),
     #000 calc(var(--fab-hole) + 1px)
   );
   mask-image: radial-gradient(
-    circle calc(var(--fab-hole) + 1px) at 50% 0,
+    circle calc(var(--fab-hole) + 1px) at 50% var(--fab-drop),
     transparent 0 var(--fab-hole),
     #000 calc(var(--fab-hole) + 1px)
   );
@@ -714,7 +745,7 @@ button {
 }
 
 .bottom-nav > button[aria-current='page'] {
-  color: var(--accent-2);
+  color: var(--accent);
 }
 
 .bottom-nav .nav-icon {
@@ -737,9 +768,9 @@ button {
   line-height: 1;
   gap: 0;
   /*
-   * Lift the button until its centre lands on the bar's top edge, which is
-   * where the mask's circle is centred. Anything less and the bar closes back
-   * in around the button's lower half.
+   * Lift the button until its centre lands on the mask circle's centre, which
+   * is --fab-drop below the bar's top edge. Anything else and the bar closes
+   * back in around the button instead of ringing it.
    */
   transform: translateY(calc(var(--fab-lift) * -1));
   box-shadow: 0 6px 18px rgba(0, 0, 0, 0.45);

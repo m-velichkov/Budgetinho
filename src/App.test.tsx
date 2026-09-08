@@ -258,13 +258,30 @@ describe('explicit save', () => {
     expect(stored().settings.periodStartDay).toBe(1);
   });
 
-  it('disables Save until something actually changes', () => {
+  it('shows a disabled Save -- not "Saved" -- on a pristine settings page', () => {
     boot();
     fireEvent.click(screen.getByRole('button', { name: /Settings/ }));
     const card = cardFor(/Period start day/);
 
-    expect(within(card).getByRole('button', { name: 'Saved' }).hasAttribute('disabled')).toBe(true);
+    expect(within(card).getByRole('button', { name: 'Save' }).hasAttribute('disabled')).toBe(true);
+    expect(within(card).queryByRole('button', { name: 'Saved' })).toBeNull();
+
     fireEvent.change(screen.getByLabelText(/Period start day/), { target: { value: '9' } });
+    expect(within(card).getByRole('button', { name: 'Save' }).hasAttribute('disabled')).toBe(false);
+  });
+
+  it('only says "Saved" after an actual save, and reverts when edited again', () => {
+    boot();
+    fireEvent.click(screen.getByRole('button', { name: /Settings/ }));
+    const card = cardFor(/Period start day/);
+
+    fireEvent.change(screen.getByLabelText(/Period start day/), { target: { value: '9' } });
+    fireEvent.click(within(card).getByRole('button', { name: 'Save' }));
+
+    expect(within(card).getByRole('button', { name: 'Saved' }).hasAttribute('disabled')).toBe(true);
+
+    // Editing again takes it back to an enabled "Save".
+    fireEvent.change(screen.getByLabelText(/Period start day/), { target: { value: '12' } });
     expect(within(card).getByRole('button', { name: 'Save' }).hasAttribute('disabled')).toBe(false);
   });
 
@@ -290,7 +307,7 @@ describe('explicit save', () => {
     const names = () => (stored().categories as Array<{ name: string }>).map((c) => c.name);
     expect(names()).not.toContain('Food shopping');
 
-    fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+    fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Save' }));
     expect(names()).toContain('Food shopping');
   });
 });

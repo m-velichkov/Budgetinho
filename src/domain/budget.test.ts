@@ -317,8 +317,14 @@ describe('money parsing and formatting', () => {
   });
 
   it('formats with grouping and a real minus sign', () => {
-    expect(formatMoney(123456, 'lv')).toBe('1 234.56 lv');
-    expect(formatMoney(-500, 'lv')).toBe('−5.00 lv');
-    expect(formatMoney(500, 'lv', { signed: true })).toBe('+5.00 lv');
+    // Narrow no-break spaces (U+202F) group the digits and join the currency,
+    // so an amount can never wrap away from its unit.
+    expect(formatMoney(123456, 'lv')).toBe('1 234.56 lv');
+    expect(formatMoney(-500, 'lv')).toBe('−5.00 lv');
+    expect(formatMoney(500, 'lv', { signed: true })).toBe('+5.00 lv');
+  });
+
+  it('never separates an amount from its currency with a breaking space', () => {
+    expect(formatMoney(123456, 'lv')).not.toMatch(/[ 	]/);
   });
 });

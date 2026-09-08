@@ -86,10 +86,12 @@ export function formatMoney(cents: Cents, currency = 'лв', opts: FormatOptions
   const whole = Math.floor(abs / 100);
   const frac = abs % 100;
 
-  const grouped = String(whole).replace(/\B(?=(\d{3})+(?!\d))/g, '\u00A0');
+  const grouped = String(whole).replace(/\B(?=(\d{3})+(?!\d))/g, '\u202F');
   const body = opts.compact && frac === 0 ? grouped : `${grouped}.${String(frac).padStart(2, '0')}`;
   const sign = negative ? '\u2212' : opts.signed ? '+' : ''; // U+2212 minus reads better than a hyphen
-  return `${sign}${body}\u00A0${currency}`;
+  // U+202F (narrow no-break space) rather than a full space: the amount and its
+  // currency belong together and must never wrap apart.
+  return `${sign}${body}\u202F${currency}`;
 }
 
 /** Round-half-up division used when splitting a goal across periods. */

@@ -9,7 +9,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { MAX_START_DAY, MIN_START_DAY } from '../domain/period';
-import { ConfirmDialog, Field, Modal, Segmented } from '../components/ui';
+import { ConfirmDialog, Field, Modal, Segmented, useSaveState } from '../components/ui';
 import { CategoryManager } from '../components/CategoryManager';
 import {
   checkToken,
@@ -81,6 +81,10 @@ export function Settings() {
     gistDraft.gistId !== settings.gist.gistId ||
     gistDraft.fileName !== settings.gist.fileName;
 
+  const periodSave = useSaveState(periodDirty);
+  const colourSave = useSaveState(colourDirty);
+  const gistSave = useSaveState(gistDirty);
+
   const savePeriod = () => {
     const day = Number(periodDraft.periodStartDay);
     if (!Number.isFinite(day) || day < MIN_START_DAY || day > MAX_START_DAY) {
@@ -94,6 +98,7 @@ export function Settings() {
     }
     setPeriodError(undefined);
     updateSettings({ periodStartDay: day, currency });
+    periodSave.markSaved();
   };
 
   const saveColours = () => {
@@ -101,6 +106,7 @@ export function Settings() {
       nearLimitThreshold: colourDraft.nearLimitThreshold,
       statusBasis: colourDraft.statusBasis,
     });
+    colourSave.markSaved();
   };
 
   const saveGist = () => {
@@ -109,6 +115,7 @@ export function Settings() {
       gistId: gistDraft.gistId.trim(),
       fileName: gistDraft.fileName.trim() || 'budgetinho.json',
     });
+    gistSave.markSaved();
   };
 
   return (
@@ -147,8 +154,13 @@ export function Settings() {
           )}
         </Field>
 
-        <button type="button" className="btn primary block" disabled={!periodDirty} onClick={savePeriod}>
-          {periodDirty ? 'Save' : 'Saved'}
+        <button
+          type="button"
+          className="btn primary block"
+          disabled={periodSave.disabled}
+          onClick={savePeriod}
+        >
+          {periodSave.label}
         </button>
       </div>
 
@@ -193,8 +205,13 @@ export function Settings() {
           </span>
         </div>
 
-        <button type="button" className="btn primary block" disabled={!colourDirty} onClick={saveColours}>
-          {colourDirty ? 'Save' : 'Saved'}
+        <button
+          type="button"
+          className="btn primary block"
+          disabled={colourSave.disabled}
+          onClick={saveColours}
+        >
+          {colourSave.label}
         </button>
       </div>
 
@@ -260,8 +277,13 @@ export function Settings() {
           )}
         </Field>
 
-        <button type="button" className="btn primary block" disabled={!gistDirty} onClick={saveGist}>
-          {gistDirty ? 'Save sync settings' : 'Saved'}
+        <button
+          type="button"
+          className="btn primary block"
+          disabled={gistSave.disabled}
+          onClick={saveGist}
+        >
+          {gistSave.label === 'Saved' ? 'Saved' : 'Save sync settings'}
         </button>
 
         <div className="divider" />
