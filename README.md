@@ -61,11 +61,22 @@ Both people point at one Gist. Do this once, on one device:
 1. Create a GitHub personal access token with the **`gist`** scope
    (Settings → Developer settings → Personal access tokens; classic tokens need only `gist`, fine-grained tokens need Gists: read and write).
 2. In the app: **Settings → Shared sync**, paste the token, tap **Create a new secret gist**. The gist id is filled in automatically.
-3. On the second device: paste the same gist id and that person's own token, then tap **Import (pull)**.
+3. On the second device: paste **the same token** and the same gist id, then tap **Import (pull)**.
+   Pulling replaces that device's budget, so do it before entering anything there.
 
 Day to day: **Export (push)** after you have entered things, **Import (pull)** before you start.
 
 **Conflict warning.** Every successful sync records the gist's `updated_at`. Before pushing, the app re-checks it. If it moved, the push is refused and you are shown when the gist changed versus when you last synced, with the option to pull their version first or deliberately overwrite. This is the "someone else changed it first" guard from the spec — it is not automatic merging, and there is none.
+
+### Why both phones share one token
+
+Gists have no collaborator model: **only the account that owns a gist can write to it.**
+A second person's own token could pull the gist but every push would fail, so both
+devices use a token belonging to the gist's owner.
+
+A `gist`-scope token can read, edit and delete *every* gist on that account. If that is
+too broad, make a separate GitHub account for the budget and use its token instead —
+then the token can only ever touch that account's gists.
 
 ### About the token
 
