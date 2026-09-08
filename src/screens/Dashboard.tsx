@@ -8,7 +8,7 @@ import { formatMoney } from '../domain/money';
 import { CategoryCard } from '../components/CategoryCard';
 import { CategorySheet } from '../components/CategorySheet';
 import { EmptyState } from '../components/ui';
-import { autoAssignGoals, notify } from '../store/store';
+import { autoAssignGoals } from '../store/store';
 import { useApp, useDerived, type Route } from '../store/hooks';
 
 const PACE_COPY: Record<string, string> = {
@@ -29,24 +29,14 @@ export function Dashboard({ navigate }: { navigate: (route: Route) => void }) {
 
   return (
     <div className="screen">
-      {/* Safe to spend: the one "can I afford this right now" number. */}
+      {/* The headline number: income this period not yet given a job. */}
       <div className="headline">
-        <div className="label">Safe to spend</div>
-        <div className={`value ${dashboard.safeToSpend < 0 ? 'negative' : ''}`}>
-          {formatMoney(dashboard.safeToSpend, currency)}
+        <div className="label">Unassigned</div>
+        <div className={`value ${dashboard.unassigned < 0 ? 'negative' : ''}`}>
+          {formatMoney(dashboard.unassigned, currency)}
         </div>
         <div className="small muted">
-          Unassigned income minus what is sitting in essential categories.
-        </div>
-        <div className="breakdown small">
-          <div className="grow">
-            <div className="muted tiny">Unassigned</div>
-            <div className="num">{formatMoney(dashboard.unassigned, currency)}</div>
-          </div>
-          <div className="grow">
-            <div className="muted tiny">Essential held</div>
-            <div className="num">{formatMoney(dashboard.essentialCommitted, currency)}</div>
-          </div>
+          This period&rsquo;s income minus everything you have assigned to categories.
         </div>
       </div>
 
@@ -97,10 +87,7 @@ export function Dashboard({ navigate }: { navigate: (route: Route) => void }) {
           type="button"
           className="btn block"
           style={{ marginTop: 12 }}
-          onClick={() => {
-            const touched = autoAssignGoals(periodKey, dashboard);
-            notify('success', `Funded ${touched} goal${touched === 1 ? '' : 's'} for this period.`);
-          }}
+          onClick={() => autoAssignGoals(periodKey, dashboard)}
         >
           Fund {goalsToFund} goal{goalsToFund === 1 ? '' : 's'} for this period
         </button>

@@ -9,19 +9,24 @@
  */
 
 :root {
-  /* Base surfaces */
-  --bg: #1b1f2a;
-  --surface: #242938;
-  --surface-raised: #2a3042;
-  --border: #2e3444;
+  /*
+   * Base surfaces. The spec called for a warm dark *navy*, but in practice the
+   * blue-leaning greys read as cold, so these are warm near-neutrals (hue ~30)
+   * at the same lightness. The pastel status cards and both accents are
+   * unchanged.
+   */
+  --bg: #1b1917;
+  --surface: #262220;
+  --surface-raised: #302b28;
+  --border: #3a3430;
 
-  /* Text */
-  --text: #f5f6fa;
-  --text-muted: #8890a4;
+  /* Text -- warm whites and greys to match the surfaces */
+  --text: #f6f3ef;
+  --text-muted: #a0958c;
 
   /* Accents */
   --accent: #f0a868; /* peach-orange: primary CTA only */
-  --accent-ink: #3a2311; /* text on the peach button */
+  --accent-ink: #35200f; /* text on the peach button */
   --accent-2: #2dd4bf; /* teal: safe-to-spend, active nav */
 
   /* Category status: full-card pastel tints */
@@ -210,7 +215,7 @@ button {
   justify-content: space-between;
   gap: 8px;
   padding: 10px 14px;
-  background: rgba(27, 31, 42, 0.92);
+  background: rgba(27, 25, 23, 0.92);
   backdrop-filter: blur(8px);
   border-bottom: 1px solid var(--border);
 }
@@ -640,15 +645,41 @@ button {
   right: 0;
   z-index: 30;
   display: flex;
+  align-items: flex-end;
   max-width: 720px;
   margin: 0 auto;
-  background: rgba(27, 31, 42, 0.96);
-  backdrop-filter: blur(10px);
-  border-top: 1px solid var(--border);
   padding-bottom: env(safe-area-inset-bottom, 0px);
+  /* The nav box extends above the bar so the raised Add button is not clipped;
+     only the bar and the buttons themselves take pointer events. */
+  pointer-events: none;
+  background: none;
 }
 
-.bottom-nav button {
+/*
+ * The painted bar, drawn behind the buttons. A radial-gradient mask punches a
+ * circular hole at the top centre so the bar appears to curve around the Add
+ * button. drop-shadow follows the masked alpha shape, which gives the notch its
+ * hairline edge. Browsers without mask support just get a plain bar -- the
+ * button still sits correctly on top of it.
+ */
+.nav-surface {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: calc(var(--nav-height) + env(safe-area-inset-bottom, 0px));
+  pointer-events: auto;
+  background: rgba(27, 25, 23, 0.97);
+  backdrop-filter: blur(10px);
+  -webkit-mask-image: radial-gradient(circle 34px at 50% 0, transparent 0 33px, #000 34px);
+  mask-image: radial-gradient(circle 34px at 50% 0, transparent 0 33px, #000 34px);
+  filter: drop-shadow(0 -1px 0 var(--border));
+}
+
+.bottom-nav > button {
+  position: relative;
+  z-index: 1;
+  pointer-events: auto;
   flex: 1;
   display: flex;
   flex-direction: column;
@@ -663,7 +694,7 @@ button {
   font-weight: 600;
 }
 
-.bottom-nav button[aria-current='page'] {
+.bottom-nav > button[aria-current='page'] {
   color: var(--accent-2);
 }
 
@@ -672,22 +703,33 @@ button {
   line-height: 1;
 }
 
-/* The add button is the one primary CTA in the nav. */
-.bottom-nav button.add .nav-icon {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 34px;
-  height: 26px;
-  border-radius: 9px;
+/* The raised centre CTA. No label -- the shape and colour carry it. */
+.bottom-nav > button.nav-add {
+  flex: 0 0 auto;
+  width: 56px;
+  height: 56px;
+  margin: 0 6px;
+  border-radius: 50%;
   background: var(--accent);
   color: var(--accent-ink);
-  font-size: 20px;
-  font-weight: 700;
+  font-size: 30px;
+  font-weight: 400;
+  line-height: 1;
+  gap: 0;
+  /* Lift it into the notch. */
+  transform: translateY(-16px);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.45);
 }
 
-.bottom-nav button.add[aria-current='page'] {
-  color: var(--accent);
+.bottom-nav > button.nav-add > span {
+  /* Optical centring: the glyph sits slightly high in its box. */
+  display: block;
+  margin-top: -3px;
+}
+
+.bottom-nav > button.nav-add[aria-current='page'] {
+  color: var(--accent-ink);
+  box-shadow: 0 0 0 3px rgba(240, 168, 104, 0.28), 0 6px 18px rgba(0, 0, 0, 0.45);
 }
 
 /* --------------------------------------------------------------- notices -- */
@@ -744,7 +786,7 @@ button {
   display: flex;
   align-items: flex-end;
   justify-content: center;
-  background: rgba(10, 12, 18, 0.66);
+  background: rgba(14, 12, 11, 0.68);
   padding: 0;
 }
 

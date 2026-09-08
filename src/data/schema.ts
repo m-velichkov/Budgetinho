@@ -20,7 +20,7 @@ import type { ISODate } from '../domain/date';
 import type { PeriodKey } from '../domain/period';
 
 /** Bump this whenever the shape below changes, and add a migration. */
-export const SCHEMA_VERSION = 1;
+export const SCHEMA_VERSION = 2;
 
 export const STORAGE_KEY = 'budgetinho.state.v1';
 
@@ -54,11 +54,6 @@ export interface Category {
   groupId: string;
   name: string;
   sortOrder: number;
-  /**
-   * Counts against safe-to-spend: rent, bills, anything already committed.
-   * Everything else is treated as discretionary.
-   */
-  essential: boolean;
   goal?: Goal;
   /** Hidden from the dashboard but kept for historical reports. */
   archived?: boolean;

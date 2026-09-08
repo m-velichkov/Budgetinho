@@ -1,7 +1,10 @@
 /**
  * Tapping a category card opens this sheet: assign money to it for the visible
- * period, set a goal, flag it essential, and see what has been spent from it.
- * This is where budgeting (as opposed to spending) actually happens.
+ * period, set a goal, and see what has been spent from it. This is where
+ * budgeting (as opposed to spending) actually happens.
+ *
+ * Nothing here writes on blur or on keystroke -- every change needs an explicit
+ * Save, and the button stays disabled until something has actually changed.
  */
 
 import { useMemo, useState } from 'react';
@@ -9,9 +12,9 @@ import { formatMoney, parseAmount, centsToDecimalString } from '../domain/money'
 import { formatPeriodRange, periodFromKey, type PeriodKey } from '../domain/period';
 import { formatShort } from '../domain/date';
 import { validateGoalInput } from '../data/validation';
-import { setAssignment, setCategoryGoal, updateCategory } from '../store/store';
+import { setAssignment, setCategoryGoal } from '../store/store';
 import { useApp } from '../store/hooks';
-import { Field, Modal, Segmented, Switch } from './ui';
+import { Field, Modal, Segmented } from './ui';
 import type { CategoryView } from '../domain/budget';
 import type { Goal } from '../data/schema';
 
@@ -28,7 +31,9 @@ export function CategorySheet({
 }) {
   const { data } = useApp();
   const period = periodFromKey(periodKey, data.settings.periodStartDay);
-  const [amount, setAmount] = useState(() => (view.assigned ? centsToDecimalString(view.assigned) : ''));
+
+  const assignedText = view.assigned ? centsToDecimalString(view.assigned) : '';
+  const [amount, setAmount] = useState(assignedText);
   const [amountError, setAmountError] = useState<string | undefined>();
 
   const [goalType, setGoalType] = useState<Goal['type']>(view.category.goal?.type ?? 'per_period');
@@ -39,6 +44,8 @@ export function CategorySheet({
   const [goalErrors, setGoalErrors] = useState<{ amount?: string; targetDate?: string }>({});
   const [showGoal, setShowGoal] = useState(Boolean(view.category.goal));
 
+  const amountDirty = amount.trim() !== assignedText;
+
   const recent = useMemo(
     () =>
       data.transactions
@@ -47,8 +54,8 @@ export function CategorySheet({
     [data.transactions, view.category.id, period.start, period.end],
   );
 
-  const applyAssignment = (raw: string) => {
-    const cents = raw.trim() === '' ? 0 : parseAmount(raw);
+  const saveAssignment = () => {
+    const cents = amount.trim() === '' ? 0 : parseAmount(amount);
     if (cents === null) {
       setAmountError('Enter a number, or leave it empty for zero.');
       return;
@@ -59,6 +66,12 @@ export function CategorySheet({
     }
     setAmountError(undefined);
     setAssignment(periodKey, view.category.id, cents);
+  };
+
+  /** Quick actions stage a value in the field; Save still commits it. */
+  const stage = (cents: number) => {
+    setAmount(centsToDecimalString(cents));
+    setAmountError(undefined);
   };
 
   const saveGoal = () => {
@@ -104,35 +117,20 @@ export function CategorySheet({
 
       <Field label={`Assign for ${formatPeriodRange(period)}`} error={amountError}>
         {(id) => (
-          <div className="row" style={{ gap: 8 }}>
-            <input
-              id={id}
-              className={`input num grow ${amountError ? 'invalid' : ''}`}
-              inputMode="decimal"
-              placeholder="0.00"
-              value={amount}
-              onChange={(e) => setAmount(e.target.value)}
-              onBlur={(e) => applyAssignment(e.target.value)}
-            />
-            <button type="button" className="btn primary" onClick={() => applyAssignment(amount)}>
-              Assign
-            </button>
-          </div>
+          <input
+            id={id}
+            className={`input num ${amountError ? 'invalid' : ''}`}
+            inputMode="decimal"
+            placeholder="0.00"
+            value={amount}
+            onChange={(e) => setAmount(e.target.value)}
+          />
         )}
       </Field>
 
-      <div className="row" style={{ gap: 8, flexWrap: 'wrap', marginBottom: 16 }}>
+      <div className="row" style={{ gap: 8, flexWrap: 'wrap', marginBottom: 12 }}>
         {view.balance < 0 ? (
-          <button
-            type="button"
-            className="btn small"
-            onClick={() => {
-              // Cover the overspend so it doesn't roll into the next period.
-              const next = view.assigned - view.balance;
-              setAmount(centsToDecimalString(next));
-              setAssignment(periodKey, view.category.id, next);
-            }}
-          >
+          <button type="button" className="btn small" onClick={() => stage(view.assigned - view.balance)}>
             Cover {formatMoney(-view.balance, currency, { compact: true })} overspend
           </button>
         ) : null}
@@ -140,35 +138,21 @@ export function CategorySheet({
           <button
             type="button"
             className="btn small"
-            onClick={() => {
-              const next = view.assigned + view.goal!.remainingThisPeriod;
-              setAmount(centsToDecimalString(next));
-              setAssignment(periodKey, view.category.id, next);
-            }}
+            onClick={() => stage(view.assigned + view.goal!.remainingThisPeriod)}
           >
             Fund goal ({formatMoney(view.goal.remainingThisPeriod, currency, { compact: true })})
           </button>
         ) : null}
-        {view.assigned !== 0 ? (
-          <button
-            type="button"
-            className="btn small ghost"
-            onClick={() => {
-              setAmount('');
-              setAssignment(periodKey, view.category.id, 0);
-            }}
-          >
+        {amount.trim() !== '' ? (
+          <button type="button" className="btn small ghost" onClick={() => stage(0)}>
             Clear
           </button>
         ) : null}
       </div>
 
-      <Switch
-        label="Essential / upcoming"
-        hint="Its balance is subtracted from safe-to-spend."
-        checked={view.category.essential}
-        onChange={(essential) => updateCategory(view.category.id, { essential })}
-      />
+      <button type="button" className="btn primary block" disabled={!amountDirty} onClick={saveAssignment}>
+        {amountDirty ? 'Save assignment' : 'Saved'}
+      </button>
 
       <div className="divider" />
 
@@ -216,11 +200,7 @@ export function CategorySheet({
           </Field>
 
           {goalType === 'target_by_date' ? (
-            <Field
-              label="Reach it by"
-              error={goalErrors.targetDate}
-              hint="The per-period amount is spread over your custom periods, not months."
-            >
+            <Field label="Reach it by" error={goalErrors.targetDate}>
               {(id) => (
                 <input
                   id={id}

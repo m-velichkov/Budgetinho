@@ -6,40 +6,35 @@
 
 import { emptyState, newId, nowStamp, type BudgetState } from './schema';
 
-interface SeedCategory {
-  name: string;
-  essential: boolean;
-}
-
-const SEED: Array<{ group: string; categories: SeedCategory[] }> = [
+const SEED: Array<{ group: string; categories: string[] }> = [
   {
     group: 'Fixed costs',
     categories: [
-      { name: 'Rent', essential: true },
-      { name: 'Utilities', essential: true },
-      { name: 'Internet & phone', essential: true },
+      'Rent',
+      'Utilities',
+      'Internet & phone',
     ],
   },
   {
     group: 'Everyday',
     categories: [
-      { name: 'Groceries', essential: true },
-      { name: 'Transport', essential: false },
-      { name: 'Eating out', essential: false },
-      { name: 'Household', essential: false },
+      'Groceries',
+      'Transport',
+      'Eating out',
+      'Household',
     ],
   },
   {
     group: 'Life',
     categories: [
-      { name: 'Health', essential: false },
-      { name: 'Fun', essential: false },
-      { name: 'Gifts', essential: false },
+      'Health',
+      'Fun',
+      'Gifts',
     ],
   },
   {
     group: 'Savings',
-    categories: [{ name: 'Emergency fund', essential: false }],
+    categories: ['Emergency fund'],
   },
 ];
 
@@ -52,14 +47,8 @@ export function seedState(periodStartDay = 1): BudgetState {
   for (const entry of SEED) {
     const groupId = newId('grp');
     state.groups.push({ id: groupId, name: entry.group, sortOrder: groupOrder++ });
-    for (const c of entry.categories) {
-      state.categories.push({
-        id: newId('cat'),
-        groupId,
-        name: c.name,
-        sortOrder: categoryOrder++,
-        essential: c.essential,
-      });
+    for (const name of entry.categories) {
+      state.categories.push({ id: newId('cat'), groupId, name, sortOrder: categoryOrder++ });
     }
   }
 

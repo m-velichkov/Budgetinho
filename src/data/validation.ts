@@ -260,7 +260,6 @@ export function parseState(raw: unknown, opts: { keepLocalGistSettings?: Setting
         groupId,
         name: name.slice(0, MAX_NAME_LENGTH),
         sortOrder: int(c.sortOrder, categories.length),
-        essential: bool(c.essential),
         archived: bool(c.archived) || undefined,
         goal: parseGoal(c.goal),
         notes: str(c.notes).slice(0, MAX_MEMO_LENGTH) || undefined,

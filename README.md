@@ -18,7 +18,7 @@ npm run dev      # http://localhost:5173
 | `npm run dev` | Dev server with hot reload |
 | `npm run build` | Typecheck, then build to `dist/` |
 | `npm run preview` | Serve the production build locally |
-| `npm test` | Run the test suite once (66 tests) |
+| `npm test` | Run the test suite once (75 tests) |
 | `npm run test:watch` | Tests in watch mode |
 | `npm run typecheck` | TypeScript only |
 
@@ -98,7 +98,7 @@ src/
     money.ts       Integer minor units, parsing and formatting.
     budget.ts      Ledger, rollover, status colours, safe-to-spend, pace,
                    goals, payee memory, report aggregations.
-    *.test.ts      53 unit tests, including an exhaustive period sweep.
+    *.test.ts      54 unit tests, including an exhaustive period sweep.
 
   data/            Persistence -- this is the "database" layer.
     schema.ts      The stored document shape + SCHEMA_VERSION.
@@ -117,7 +117,7 @@ src/
   components/      Reusable UI (category card, sheets, charts, form controls).
   screens/         Dashboard, Add, Reports, Transactions, Settings.
   styles/app.css   The whole theme, as CSS custom properties.
-  App.test.tsx     13 integration tests that mount the real app.
+  App.test.tsx     21 integration tests that mount the real app.
 ```
 
 There is no `migrations/` SQL folder and no `server/` because the spec's stack is a static site on `localStorage`. The equivalent layers are mapped as: **schema + migrations →** `src/data/`, **API endpoints →** `src/store/store.ts` (local actions) and `src/api/gist.ts` (the one remote surface).
@@ -157,13 +157,15 @@ Leftovers carry forward; overspending carries forward as a negative that reduces
 
 Green under 80% spent, orange 80–99%, red overspent — as full pastel card fills. The 80% cutoff is `NEAR_LIMIT_THRESHOLD` in [`src/data/schema.ts`](src/data/schema.ts) and is also exposed as a slider in Settings.
 
-### Safe to spend
+### Unassigned
 
 ```
-safe to spend = unassigned income this period − Σ positive balances of categories flagged "essential"
+unassigned = income this period − everything assigned to categories this period
 ```
 
-Flag a category essential in its sheet or in Settings.
+The dashboard headline. The spec's safe-to-spend number subtracted balances held in
+categories flagged "essential"; that flag was removed, which leaves safe-to-spend
+identical to unassigned, so the headline says what it now actually is.
 
 ### Pace
 
@@ -188,7 +190,13 @@ Three places where the spec was ambiguous or where following it literally would 
 
 3. **A fourth `neutral` card state.** A category with nothing assigned and nothing spent is not "funded", so painting it green is misleading and makes an untouched budget very loud. Those cards stay on the neutral dark surface. The three specified states are unchanged.
 
-Two smaller ones: an overspent essential category contributes **0** to safe-to-spend rather than a negative (subtracting a negative would *raise* the number for money already gone), and deleting a category keeps its transactions as uncategorised rather than deleting them, so money never silently disappears from reports.
+4. **No essential flag, so no safe-to-spend.** The flag was dropped at the owner's request. Since safe-to-spend was defined as unassigned minus essential balances, removing it collapses the two into one number, and the dashboard headline is now **Unassigned**.
+
+5. **Warm greys instead of navy.** The spec's base surfaces (`#1B1F2A` and friends) read as cold blue in use. They are now warm near-neutrals at the same lightness. The pastel status cards and both accents are exactly as specified.
+
+6. **No success toasts.** Confirmations like "transaction saved" were removed as noise; the UI itself is the feedback (you land on Activity, the number changes, the row disappears). Errors and data-repair messages still appear, and sync reports its result inline in Settings — pressing Export with no visible outcome would be indistinguishable from nothing happening.
+
+One smaller call: deleting a category keeps its transactions as uncategorised rather than deleting them, so money never silently disappears from reports.
 
 ---
 

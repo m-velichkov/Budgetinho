@@ -320,12 +320,11 @@ export interface DashboardView {
   totalAssigned: Cents;
   totalActivity: Cents;
   uncategorised: Cents;
-  /** income this period minus everything assigned this period. */
+  /**
+   * Income this period minus everything assigned this period -- the headline
+   * "not yet given a job" number.
+   */
   unassigned: Cents;
-  /** Positive balances sitting in categories flagged essential. */
-  essentialCommitted: Cents;
-  /** unassigned - essentialCommitted. The "can I afford this" number. */
-  safeToSpend: Cents;
   overallPace: PaceResult;
   groups: GroupView[];
   categories: CategoryView[];
@@ -399,13 +398,6 @@ export function buildDashboard(
     .filter((g) => g.categories.length > 0);
 
   const unassigned = row.income - row.totalAssigned;
-  // Only positive balances are "committed": an essential category that is
-  // already overspent has had its money leave the account, so subtracting a
-  // negative (which would *raise* safe-to-spend) would be exactly backwards.
-  const essentialCommitted = sum(
-    categories.filter((c) => c.category.essential).map((c) => Math.max(0, c.balance)),
-  );
-
   const totalFunding = sum(categories.map((c) => Math.max(0, c.assigned + c.carryover)));
 
   return {
@@ -416,8 +408,6 @@ export function buildDashboard(
     totalActivity: row.totalActivity,
     uncategorised: row.uncategorised,
     unassigned,
-    essentialCommitted,
-    safeToSpend: unassigned - essentialCommitted,
     overallPace: spendingPace(row.totalActivity, totalFunding, period, paceDate, tolerance),
     groups,
     categories,

@@ -1,11 +1,14 @@
 /**
  * Settings: the period start day (the setting the whole app pivots on),
  * category management, and the shared-Gist sync with its conflict warning.
+ *
+ * Every field here is a draft until you press Save. Nothing commits on
+ * keystroke or on blur, and each Save button is disabled until that section
+ * actually differs from what is stored.
  */
 
-import { useRef, useState } from 'react';
-import { formatPeriodRange, periodForDate, MAX_START_DAY, MIN_START_DAY } from '../domain/period';
-import { today } from '../domain/date';
+import { useEffect, useRef, useState } from 'react';
+import { MAX_START_DAY, MIN_START_DAY } from '../domain/period';
 import { ConfirmDialog, Field, Modal, Segmented } from '../components/ui';
 import { CategoryManager } from '../components/CategoryManager';
 import {
@@ -22,6 +25,7 @@ import {
   updateSettings,
 } from '../store/store';
 import { useApp } from '../store/hooks';
+import type { StatusBasis } from '../domain/budget';
 
 export function Settings() {
   const { data, sync } = useApp();
@@ -30,9 +34,82 @@ export function Settings() {
   const [confirmReset, setConfirmReset] = useState(false);
   const [showToken, setShowToken] = useState(false);
 
-  // Preview the period the current setting produces, so the effect of changing
-  // the start day is visible before it is committed.
-  const preview = periodForDate(today(), settings.periodStartDay);
+  // --- drafts ---------------------------------------------------------------
+  const [periodDraft, setPeriodDraft] = useState({
+    periodStartDay: String(settings.periodStartDay),
+    currency: settings.currency,
+  });
+  const [colourDraft, setColourDraft] = useState({
+    nearLimitThreshold: settings.nearLimitThreshold,
+    statusBasis: settings.statusBasis,
+  });
+  const [gistDraft, setGistDraft] = useState({
+    token: settings.gist.token,
+    gistId: settings.gist.gistId,
+    fileName: settings.gist.fileName,
+  });
+  const [periodError, setPeriodError] = useState<string | undefined>();
+
+  // Re-seed the drafts when the stored settings change underneath us -- a Gist
+  // pull can rewrite them while this screen is open.
+  useEffect(() => {
+    setPeriodDraft({ periodStartDay: String(settings.periodStartDay), currency: settings.currency });
+  }, [settings.periodStartDay, settings.currency]);
+
+  useEffect(() => {
+    setColourDraft({ nearLimitThreshold: settings.nearLimitThreshold, statusBasis: settings.statusBasis });
+  }, [settings.nearLimitThreshold, settings.statusBasis]);
+
+  useEffect(() => {
+    setGistDraft({
+      token: settings.gist.token,
+      gistId: settings.gist.gistId,
+      fileName: settings.gist.fileName,
+    });
+  }, [settings.gist.token, settings.gist.gistId, settings.gist.fileName]);
+
+  const periodDirty =
+    periodDraft.periodStartDay !== String(settings.periodStartDay) ||
+    periodDraft.currency !== settings.currency;
+
+  const colourDirty =
+    colourDraft.nearLimitThreshold !== settings.nearLimitThreshold ||
+    colourDraft.statusBasis !== settings.statusBasis;
+
+  const gistDirty =
+    gistDraft.token !== settings.gist.token ||
+    gistDraft.gistId !== settings.gist.gistId ||
+    gistDraft.fileName !== settings.gist.fileName;
+
+  const savePeriod = () => {
+    const day = Number(periodDraft.periodStartDay);
+    if (!Number.isFinite(day) || day < MIN_START_DAY || day > MAX_START_DAY) {
+      setPeriodError(`Pick a day between ${MIN_START_DAY} and ${MAX_START_DAY}.`);
+      return;
+    }
+    const currency = periodDraft.currency.trim();
+    if (!currency) {
+      setPeriodError('Currency cannot be empty.');
+      return;
+    }
+    setPeriodError(undefined);
+    updateSettings({ periodStartDay: day, currency });
+  };
+
+  const saveColours = () => {
+    updateSettings({
+      nearLimitThreshold: colourDraft.nearLimitThreshold,
+      statusBasis: colourDraft.statusBasis,
+    });
+  };
+
+  const saveGist = () => {
+    updateGistSettings({
+      token: gistDraft.token.trim(),
+      gistId: gistDraft.gistId.trim(),
+      fileName: gistDraft.fileName.trim() || 'budgetinho.json',
+    });
+  };
 
   return (
     <div className="screen">
@@ -43,10 +120,7 @@ export function Settings() {
       {/* ------------------------------------------------------ period ---- */}
       <div className="section-title">Budget period</div>
       <div className="card">
-        <Field
-          label="Period start day"
-          hint={`Right now that means ${formatPeriodRange(preview)}. If a month is too short (e.g. the 31st in February) the period starts on that month's last day instead.`}
-        >
+        <Field label="Period start day" error={periodError}>
           {(id) => (
             <input
               id={id}
@@ -55,33 +129,34 @@ export function Settings() {
               inputMode="numeric"
               min={MIN_START_DAY}
               max={MAX_START_DAY}
-              value={settings.periodStartDay}
-              onChange={(e) => {
-                const value = Number(e.target.value);
-                if (Number.isFinite(value)) updateSettings({ periodStartDay: value });
-              }}
+              value={periodDraft.periodStartDay}
+              onChange={(e) => setPeriodDraft({ ...periodDraft, periodStartDay: e.target.value })}
             />
           )}
         </Field>
 
-        <Field label="Currency" hint="Shown after every amount. Any short symbol or code.">
+        <Field label="Currency">
           {(id) => (
             <input
               id={id}
               className="input"
               maxLength={8}
-              value={settings.currency}
-              onChange={(e) => updateSettings({ currency: e.target.value })}
+              value={periodDraft.currency}
+              onChange={(e) => setPeriodDraft({ ...periodDraft, currency: e.target.value })}
             />
           )}
         </Field>
+
+        <button type="button" className="btn primary block" disabled={!periodDirty} onClick={savePeriod}>
+          {periodDirty ? 'Save' : 'Saved'}
+        </button>
       </div>
 
       {/* ------------------------------------------------------ colours --- */}
       <div className="section-title">Category colours</div>
       <div className="card">
         <Field
-          label={`Near-limit threshold: ${Math.round(settings.nearLimitThreshold * 100)}%`}
+          label={`Near-limit threshold: ${Math.round(colourDraft.nearLimitThreshold * 100)}%`}
           hint="Below this a category is green; from here to fully spent it is orange; past it, red."
         >
           {(id) => (
@@ -92,8 +167,10 @@ export function Settings() {
               max={95}
               step={5}
               style={{ width: '100%' }}
-              value={Math.round(settings.nearLimitThreshold * 100)}
-              onChange={(e) => updateSettings({ nearLimitThreshold: Number(e.target.value) / 100 })}
+              value={Math.round(colourDraft.nearLimitThreshold * 100)}
+              onChange={(e) =>
+                setColourDraft({ ...colourDraft, nearLimitThreshold: Number(e.target.value) / 100 })
+              }
             />
           )}
         </Field>
@@ -102,19 +179,23 @@ export function Settings() {
           <span className="field-label">Measure spending against</span>
           <Segmented
             label="Status basis"
-            value={settings.statusBasis}
-            onChange={(statusBasis) => updateSettings({ statusBasis })}
+            value={colourDraft.statusBasis}
+            onChange={(statusBasis: StatusBasis) => setColourDraft({ ...colourDraft, statusBasis })}
             options={[
               { value: 'available', label: 'Available' },
               { value: 'assigned', label: 'Assigned' },
             ]}
           />
           <span className="field-hint">
-            {settings.statusBasis === 'available'
+            {colourDraft.statusBasis === 'available'
               ? 'Carried-over balance plus what you assigned this period. Recommended once rollover kicks in.'
               : 'Only what you assigned this period, ignoring anything carried over.'}
           </span>
         </div>
+
+        <button type="button" className="btn primary block" disabled={!colourDirty} onClick={saveColours}>
+          {colourDirty ? 'Save' : 'Saved'}
+        </button>
       </div>
 
       {/* ---------------------------------------------------- categories -- */}
@@ -131,7 +212,7 @@ export function Settings() {
 
         <Field
           label="GitHub token"
-          hint="A fine-grained or classic personal access token with the gist scope."
+          hint="A personal access token with the gist scope, from the account that owns the gist."
         >
           {(id) => (
             <div className="row" style={{ gap: 8 }}>
@@ -142,8 +223,8 @@ export function Settings() {
                 autoComplete="off"
                 spellCheck={false}
                 placeholder="ghp_…"
-                value={settings.gist.token}
-                onChange={(e) => updateGistSettings({ token: e.target.value })}
+                value={gistDraft.token}
+                onChange={(e) => setGistDraft({ ...gistDraft, token: e.target.value })}
               />
               <button type="button" className="btn small" onClick={() => setShowToken((v) => !v)}>
                 {showToken ? 'Hide' : 'Show'}
@@ -160,8 +241,8 @@ export function Settings() {
               autoComplete="off"
               spellCheck={false}
               placeholder="e.g. 9f2c…"
-              value={settings.gist.gistId}
-              onChange={(e) => updateGistSettings({ gistId: e.target.value })}
+              value={gistDraft.gistId}
+              onChange={(e) => setGistDraft({ ...gistDraft, gistId: e.target.value })}
             />
           )}
         </Field>
@@ -173,21 +254,32 @@ export function Settings() {
               className="input"
               autoComplete="off"
               spellCheck={false}
-              value={settings.gist.fileName}
-              onChange={(e) => updateGistSettings({ fileName: e.target.value })}
+              value={gistDraft.fileName}
+              onChange={(e) => setGistDraft({ ...gistDraft, fileName: e.target.value })}
             />
           )}
         </Field>
 
+        <button type="button" className="btn primary block" disabled={!gistDirty} onClick={saveGist}>
+          {gistDirty ? 'Save sync settings' : 'Saved'}
+        </button>
+
+        <div className="divider" />
+
         <div className="row" style={{ gap: 8, flexWrap: 'wrap' }}>
-          <button type="button" className="btn small" disabled={sync.busy} onClick={() => void checkToken()}>
+          <button
+            type="button"
+            className="btn small"
+            disabled={sync.busy || gistDirty}
+            onClick={() => void checkToken()}
+          >
             Test token
           </button>
           {!settings.gist.gistId ? (
             <button
               type="button"
               className="btn small"
-              disabled={sync.busy || !settings.gist.token}
+              disabled={sync.busy || gistDirty || !settings.gist.token}
               onClick={() => void createSharedGist()}
             >
               Create a new secret gist
@@ -204,13 +296,19 @@ export function Settings() {
           )}
         </div>
 
+        {gistDirty ? (
+          <p className="tiny muted" style={{ marginBottom: 0 }}>
+            Save your sync settings before testing or syncing.
+          </p>
+        ) : null}
+
         <div className="divider" />
 
         <div className="row" style={{ gap: 8 }}>
           <button
             type="button"
             className="btn grow"
-            disabled={sync.busy || !settings.gist.gistId}
+            disabled={sync.busy || gistDirty || !settings.gist.gistId}
             onClick={() => void pullFromGist()}
           >
             {sync.busy ? 'Working…' : 'Import (pull)'}
@@ -218,7 +316,7 @@ export function Settings() {
           <button
             type="button"
             className="btn primary grow"
-            disabled={sync.busy || !settings.gist.gistId}
+            disabled={sync.busy || gistDirty || !settings.gist.gistId}
             onClick={() => void pushToGist()}
           >
             {sync.busy ? 'Working…' : 'Export (push)'}
@@ -230,8 +328,16 @@ export function Settings() {
             ? `Last synced ${new Date(settings.gist.lastSyncedAt).toLocaleString()}.`
             : 'Never synced from this device.'}
         </p>
+        {/* Sync is the one action that still reports success, inline rather
+            than as a toast -- pressing Export with no visible result would be
+            indistinguishable from nothing happening. */}
+        {sync.lastResult ? (
+          <p className="tiny pos" style={{ marginBottom: 0 }} role="status">
+            {sync.lastResult}
+          </p>
+        ) : null}
         {sync.lastError ? (
-          <p className="tiny neg" style={{ marginBottom: 0 }}>
+          <p className="tiny neg" style={{ marginBottom: 0 }} role="alert">
             {sync.lastError}
           </p>
         ) : null}

@@ -59,6 +59,12 @@ export interface SyncState {
   /** Set when a push was refused because the gist moved under us. */
   conflict: ConflictInfo | null;
   lastError: string | null;
+  /**
+   * Outcome of the last sync action, shown inline in Settings. Sync is the one
+   * place that still needs an explicit "it worked" -- pressing Export with no
+   * visible result would be indistinguishable from a no-op.
+   */
+  lastResult: string | null;
 }
 
 export interface AppSnapshot {
@@ -76,7 +82,7 @@ let snapshot: AppSnapshot = {
   data: emptyState(),
   ready: false,
   notices: [],
-  sync: { busy: false, conflict: null, lastError: null },
+  sync: { busy: false, conflict: null, lastError: null, lastResult: null },
   periodKey: periodForDate(today(), 1).key,
   revision: 0,
 };
@@ -148,9 +154,6 @@ export function initStore(): void {
   for (const l of listeners) l();
 
   for (const text of notices) notify('info', text);
-  if (isFirstRun) {
-    notify('info', 'Welcome. Set your period start day in Settings, then assign money to categories.');
-  }
 }
 
 /**
@@ -283,12 +286,12 @@ export function deleteGroup(id: string): void {
   );
 }
 
-export function addCategory(groupId: string, name: string, essential = false): void {
+export function addCategory(groupId: string, name: string): void {
   const sortOrder = Math.max(-1, ...snapshot.data.categories.map((c) => c.sortOrder)) + 1;
   commit(
     {
       ...snapshot.data,
-      categories: [...snapshot.data.categories, { id: newId('cat'), groupId, name, sortOrder, essential }],
+      categories: [...snapshot.data.categories, { id: newId('cat'), groupId, name, sortOrder }],
     },
     { keepPeriod: true },
   );
@@ -375,7 +378,6 @@ export function resetEverything(): void {
   const fresh = seedState(snapshot.data.settings.periodStartDay);
   fresh.settings = { ...fresh.settings, ...snapshot.data.settings };
   commit(fresh);
-  notify('success', 'Budget reset. Your sync settings were kept.');
 }
 
 // ---------------------------------------------------------------------------
@@ -411,15 +413,14 @@ function recordSyncSuccess(updatedAt: string, extra: Partial<BudgetState> = {}):
 
 /** Push local state to the shared gist. Refuses on conflict unless forced. */
 export async function pushToGist(force = false): Promise<boolean> {
-  setSync({ busy: true, lastError: null, conflict: null });
+  setSync({ busy: true, lastError: null, conflict: null, lastResult: null });
   try {
     const snap = await pushGist(gistConfig(), serialise(snapshot.data), {
       lastSeenUpdatedAt: snapshot.data.settings.gist.lastSyncedGistUpdatedAt,
       force,
     });
     recordSyncSuccess(snap.updatedAt);
-    setSync({ busy: false });
-    notify('success', 'Budget exported to the shared gist.');
+    setSync({ busy: false, lastResult: 'Exported to the shared gist.' });
     return true;
   } catch (err) {
     if (err instanceof SyncError && err.code === 'conflict') {
@@ -441,7 +442,7 @@ export async function pushToGist(force = false): Promise<boolean> {
 
 /** Pull the shared gist and replace local state with it. */
 export async function pullFromGist(): Promise<boolean> {
-  setSync({ busy: true, lastError: null, conflict: null });
+  setSync({ busy: true, lastError: null, conflict: null, lastResult: null });
   try {
     const snap = await pullGist(gistConfig());
     const { state, notices } = deserialise(snap.content, snapshot.data);
@@ -456,9 +457,8 @@ export async function pullFromGist(): Promise<boolean> {
         gist: snapshot.data.settings.gist,
       },
     });
-    setSync({ busy: false });
+    setSync({ busy: false, lastResult: 'Pulled the latest budget from the gist.' });
     for (const n of notices) notify('info', n);
-    notify('success', 'Pulled the latest budget from the gist.');
     return true;
   } catch (err) {
     const message = describeSyncError(err);
@@ -469,7 +469,7 @@ export async function pullFromGist(): Promise<boolean> {
 }
 
 export async function createSharedGist(): Promise<boolean> {
-  setSync({ busy: true, lastError: null, conflict: null });
+  setSync({ busy: true, lastError: null, conflict: null, lastResult: null });
   try {
     const { gistId, snapshot: snap } = await createGist(
       { token: snapshot.data.settings.gist.token, fileName: snapshot.data.settings.gist.fileName },
@@ -485,8 +485,7 @@ export async function createSharedGist(): Promise<boolean> {
       },
     };
     commit({ ...snapshot.data, settings }, { keepPeriod: true });
-    setSync({ busy: false });
-    notify('success', 'Created a secret gist and pushed your budget to it.');
+    setSync({ busy: false, lastResult: 'Created a secret gist and pushed your budget to it.' });
     return true;
   } catch (err) {
     const message = describeSyncError(err);
@@ -497,11 +496,10 @@ export async function createSharedGist(): Promise<boolean> {
 }
 
 export async function checkToken(): Promise<void> {
-  setSync({ busy: true, lastError: null });
+  setSync({ busy: true, lastError: null, lastResult: null });
   try {
     const { login } = await verifyToken(snapshot.data.settings.gist.token);
-    setSync({ busy: false });
-    notify('success', `Token works. Signed in as ${login}.`);
+    setSync({ busy: false, lastResult: `Token works. Signed in as ${login}.` });
   } catch (err) {
     const message = describeSyncError(err);
     setSync({ busy: false, lastError: message });
@@ -535,7 +533,6 @@ export function importFromText(text: string): boolean {
       settings: { ...state.settings, gist: snapshot.data.settings.gist },
     });
     for (const n of notices) notify('info', n);
-    notify('success', 'Budget imported.');
     return true;
   } catch (err) {
     notify('error', err instanceof SyntaxError ? 'That file is not valid JSON.' : describeSyncError(err));

@@ -28,7 +28,10 @@ export function CategoryCard({
 }) {
   const { category, assigned, activity, carryover, balance, status, pace, goal } = view;
   const funded = assigned + carryover;
-  const spentShare = funded > 0 ? Math.min(1, activity / funded) : activity > 0 ? 1 : 0;
+  // The meter shows what is LEFT, so a category with 47 of 50 still available
+  // reads as nearly full and drains as you spend. Equivalent to
+  // 1 - activity/funded, clamped for the overspent case.
+  const remainingShare = funded > 0 ? Math.max(0, Math.min(1, balance / funded)) : 0;
 
   // One line of detail, chosen by what's most useful in this state.
   const detail =
@@ -42,14 +45,7 @@ export function CategoryCard({
     <button type="button" className={`cat-card ${status}`} onClick={onClick}>
       <div className="row-between" style={{ alignItems: 'flex-start' }}>
         <div className="grow">
-          <div className="cat-name truncate">
-            {category.name}
-            {category.essential ? (
-              <span className="chip" style={{ marginLeft: 6, verticalAlign: 'middle' }}>
-                essential
-              </span>
-            ) : null}
-          </div>
+          <div className="cat-name truncate">{category.name}</div>
           <div className="cat-detail">{detail}</div>
         </div>
         <div style={{ textAlign: 'right' }}>
@@ -58,8 +54,12 @@ export function CategoryCard({
         </div>
       </div>
 
-      <div className="meter" aria-hidden="true">
-        <span style={{ width: `${Math.round(spentShare * 100)}%` }} />
+      <div
+        className="meter"
+        role="img"
+        aria-label={`${Math.round(remainingShare * 100)}% of this category's money still available`}
+      >
+        <span style={{ width: `${Math.round(remainingShare * 100)}%` }} />
       </div>
 
       {(pace.pace !== 'none' && funded > 0) || goal || carryover !== 0 ? (

@@ -9,7 +9,7 @@ import { formatShort } from '../domain/date';
 import { periodFromKey } from '../domain/period';
 import { TransactionForm } from '../components/TransactionForm';
 import { ConfirmDialog, EmptyState, Modal } from '../components/ui';
-import { deleteTransaction, notify, updateTransaction } from '../store/store';
+import { deleteTransaction, updateTransaction } from '../store/store';
 import { useApp, type Route } from '../store/hooks';
 import type { Transaction } from '../data/schema';
 
@@ -190,7 +190,6 @@ export function Transactions({ navigate }: { navigate: (route: Route) => void })
             onSubmit={(value) => {
               updateTransaction(editing.id, value);
               setEditing(null);
-              notify('success', 'Transaction updated.');
             }}
           />
           <div className="divider" />
@@ -220,7 +219,6 @@ export function Transactions({ navigate }: { navigate: (route: Route) => void })
           onConfirm={() => {
             deleteTransaction(deleting.id);
             setDeleting(null);
-            notify('success', 'Transaction deleted.');
           }}
         />
       ) : null}

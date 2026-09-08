@@ -39,6 +39,22 @@ export const MIGRATIONS: Migration[] = [
     }),
   },
 
+  {
+    to: 2,
+    describe: 'Drop the per-category "essential" flag.',
+    up: (doc) => ({
+      ...doc,
+      categories: Array.isArray(doc.categories)
+        ? doc.categories.map((c) => {
+            if (typeof c !== 'object' || c === null) return c;
+            const { essential: _dropped, ...rest } = c as Record<string, unknown>;
+            return rest;
+          })
+        : [],
+      schemaVersion: 2,
+    }),
+  },
+
   // --- Add future migrations here, e.g.
   // {
   //   to: 2,

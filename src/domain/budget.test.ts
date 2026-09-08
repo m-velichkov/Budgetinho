@@ -39,8 +39,8 @@ function makeState(over: Partial<BudgetState> = {}): BudgetState {
       { id: 'fun', name: 'Fun', sortOrder: 1 },
     ],
     categories: [
-      { id: 'rent', groupId: 'fixed', name: 'Rent', sortOrder: 0, essential: true },
-      { id: 'food', groupId: 'fun', name: 'Food', sortOrder: 1, essential: false },
+      { id: 'rent', groupId: 'fixed', name: 'Rent', sortOrder: 0 },
+      { id: 'food', groupId: 'fun', name: 'Food', sortOrder: 1 },
     ],
     ...over,
   };
@@ -185,35 +185,13 @@ describe('buildDashboard', () => {
     expect(view.unassigned).toBe(1000_00);
   });
 
-  it('subtracts essential balances from safe-to-spend', () => {
-    // Rent is essential and holds 800 -> safe to spend is 1000 - 800.
-    expect(view.essentialCommitted).toBe(800_00);
-    expect(view.safeToSpend).toBe(200_00);
-  });
-
-  it('leaves discretionary balances out of the subtraction', () => {
-    const discretionary = buildDashboard(
-      { ...state, categories: state.categories.map((c) => ({ ...c, essential: false })) },
-      '2025-09',
-      ledger,
-      { asOf: '2025-09-20' },
-    );
-    expect(discretionary.essentialCommitted).toBe(0);
-    expect(discretionary.safeToSpend).toBe(1000_00);
-  });
-
-  it('never lets an overspent essential category raise safe-to-spend', () => {
-    const overspent = makeState({
-      assignments: { '2025-09': { rent: 100_00 } },
-      transactions: [
-        tx({ date: '2025-09-15', kind: 'income', categoryId: null, amount: 500_00 }),
-        tx({ date: '2025-09-16', categoryId: 'rent', amount: 300_00 }),
-      ],
+  it('reports a negative unassigned when you over-assign', () => {
+    const over = makeState({
+      assignments: { '2025-09': { rent: 3000_00 } },
+      transactions: [tx({ date: '2025-09-15', kind: 'income', categoryId: null, amount: 2000_00 })],
     });
-    const v = buildDashboard(overspent, '2025-09', buildLedger(overspent, '2025-09'), { asOf: '2025-09-20' });
-    expect(v.categories.find((c) => c.category.id === 'rent')!.balance).toBe(-200_00);
-    expect(v.essentialCommitted).toBe(0);
-    expect(v.safeToSpend).toBe(400_00); // 500 income - 100 assigned, not 600
+    const v = buildDashboard(over, '2025-09', buildLedger(over, '2025-09'), { asOf: '2025-09-20' });
+    expect(v.unassigned).toBe(-1000_00);
   });
 
   it('groups categories and hides empty groups', () => {
