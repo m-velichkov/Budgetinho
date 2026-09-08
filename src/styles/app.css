@@ -1,0 +1,847 @@
+/*
+ * Budgetinho theme.
+ *
+ * Two deliberately distinct colour systems, per the spec:
+ *   1. App chrome  -- warm dark navy surfaces, light text.
+ *   2. Category cards -- fully tinted pastel fills, dark text.
+ * Keeping them visually separate is the point: the pastel cards read as
+ * "status", everything else reads as "app".
+ */
+
+:root {
+  /* Base surfaces */
+  --bg: #1b1f2a;
+  --surface: #242938;
+  --surface-raised: #2a3042;
+  --border: #2e3444;
+
+  /* Text */
+  --text: #f5f6fa;
+  --text-muted: #8890a4;
+
+  /* Accents */
+  --accent: #f0a868; /* peach-orange: primary CTA only */
+  --accent-ink: #3a2311; /* text on the peach button */
+  --accent-2: #2dd4bf; /* teal: safe-to-spend, active nav */
+
+  /* Category status: full-card pastel tints */
+  --green-bg: #c9f4dc;
+  --green-title: #14532d;
+  --green-detail: #1e6b3f;
+  --orange-bg: #f6d9c6;
+  --orange-title: #7c2d12;
+  --orange-detail: #9a4a1f;
+  --red-bg: #f9d2d2;
+  --red-title: #7f1d1d;
+  --red-detail: #a13030;
+
+  --radius: 14px;
+  --radius-sm: 10px;
+  --gap: 12px;
+  --nav-height: 62px;
+
+  --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --font-num: 'SF Mono', ui-monospace, 'Segoe UI Mono', 'Roboto Mono', Menlo, monospace;
+
+  color-scheme: dark;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font);
+  font-size: 16px;
+  line-height: 1.45;
+  -webkit-font-smoothing: antialiased;
+  -webkit-text-size-adjust: 100%;
+  overscroll-behavior-y: none;
+}
+
+#root {
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+  color: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent-2);
+  outline-offset: 2px;
+}
+
+/* ---------------------------------------------------------------- layout -- */
+
+.app {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  min-height: 100dvh;
+  max-width: 720px;
+  margin: 0 auto;
+}
+
+.screen {
+  flex: 1;
+  padding: 14px 14px calc(var(--nav-height) + env(safe-area-inset-bottom, 0px) + 20px);
+}
+
+.screen-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--gap);
+  margin-bottom: 14px;
+}
+
+.screen-title {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+}
+
+.section-title {
+  margin: 22px 0 8px;
+  font-size: 12px;
+  font-weight: 650;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap);
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: var(--gap);
+}
+
+.row-between {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--gap);
+}
+
+.muted {
+  color: var(--text-muted);
+}
+
+.small {
+  font-size: 13px;
+}
+
+.tiny {
+  font-size: 11.5px;
+}
+
+.num {
+  font-family: var(--font-num);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+}
+
+.grow {
+  flex: 1;
+  min-width: 0;
+}
+
+.truncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.center {
+  text-align: center;
+}
+
+.pos {
+  color: var(--accent-2);
+}
+
+.neg {
+  color: #f88b8b;
+}
+
+/* ----------------------------------------------------------------- cards -- */
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 14px;
+}
+
+.card-tight {
+  padding: 10px 12px;
+}
+
+/* -------------------------------------------------------- period switcher -- */
+
+.period-bar {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 10px 14px;
+  background: rgba(27, 31, 42, 0.92);
+  backdrop-filter: blur(8px);
+  border-bottom: 1px solid var(--border);
+}
+
+.period-bar .label {
+  text-align: center;
+  line-height: 1.15;
+}
+
+.period-bar .label strong {
+  display: block;
+  font-size: 15px;
+}
+
+.icon-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  flex: none;
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  background: var(--surface);
+  color: var(--text);
+  font-size: 17px;
+  line-height: 1;
+}
+
+.icon-button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* ------------------------------------------------------- headline numbers -- */
+
+.headline {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px;
+}
+
+.headline .label {
+  font-size: 12px;
+  font-weight: 650;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.headline .value {
+  font-family: var(--font-num);
+  font-variant-numeric: tabular-nums;
+  font-size: clamp(30px, 9vw, 40px);
+  font-weight: 680;
+  letter-spacing: -0.02em;
+  color: var(--accent-2);
+  margin-top: 2px;
+}
+
+.headline .value.negative {
+  color: #f88b8b;
+}
+
+.headline .breakdown {
+  display: flex;
+  gap: 18px;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border);
+}
+
+.headline .breakdown div {
+  min-width: 0;
+}
+
+/* ---------------------------------------------------------- category card -- */
+
+.cat-card {
+  display: block;
+  width: 100%;
+  text-align: left;
+  border: none;
+  border-radius: var(--radius);
+  padding: 12px 14px;
+  background: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--border);
+}
+
+/* Full-card pastel tint per status -- the whole surface carries the colour. */
+.cat-card.green {
+  background: var(--green-bg);
+  border-color: var(--green-bg);
+  color: var(--green-title);
+}
+
+.cat-card.orange {
+  background: var(--orange-bg);
+  border-color: var(--orange-bg);
+  color: var(--orange-title);
+}
+
+.cat-card.red {
+  background: var(--red-bg);
+  border-color: var(--red-bg);
+  color: var(--red-title);
+}
+
+.cat-card .cat-name {
+  font-weight: 650;
+  font-size: 15px;
+}
+
+.cat-card .cat-detail {
+  font-size: 12.5px;
+}
+
+.cat-card.green .cat-detail {
+  color: var(--green-detail);
+}
+
+.cat-card.orange .cat-detail {
+  color: var(--orange-detail);
+}
+
+.cat-card.red .cat-detail {
+  color: var(--red-detail);
+}
+
+.cat-card.neutral .cat-detail {
+  color: var(--text-muted);
+}
+
+.cat-card .cat-balance {
+  font-family: var(--font-num);
+  font-variant-numeric: tabular-nums;
+  font-size: 16px;
+  font-weight: 650;
+  white-space: nowrap;
+}
+
+/* Progress bar inside a pastel card: dark ink on a translucent track. */
+.meter {
+  height: 5px;
+  border-radius: 3px;
+  background: rgba(0, 0, 0, 0.12);
+  overflow: hidden;
+  margin-top: 8px;
+}
+
+.meter > span {
+  display: block;
+  height: 100%;
+  border-radius: 3px;
+  background: currentColor;
+  opacity: 0.55;
+}
+
+.cat-card.neutral .meter {
+  background: var(--border);
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 1px 7px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  background: rgba(0, 0, 0, 0.1);
+}
+
+.cat-card.neutral .chip {
+  background: var(--surface-raised);
+  color: var(--text-muted);
+}
+
+/* ---------------------------------------------------------------- buttons -- */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 0 16px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  font-weight: 600;
+  font-size: 15px;
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Reserved for the single most important action on a screen. */
+.btn.primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-ink);
+}
+
+.btn.ghost {
+  background: transparent;
+}
+
+.btn.danger {
+  color: #f88b8b;
+  border-color: #4a2a2a;
+}
+
+.btn.block {
+  width: 100%;
+}
+
+.btn.small {
+  min-height: 34px;
+  padding: 0 11px;
+  font-size: 13px;
+}
+
+/* ----------------------------------------------------------------- forms -- */
+
+.field {
+  display: block;
+  margin-bottom: 14px;
+}
+
+.field > .field-label {
+  display: block;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--text-muted);
+  margin-bottom: 5px;
+}
+
+.input,
+.select,
+.textarea {
+  width: 100%;
+  min-height: 46px;
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  appearance: none;
+}
+
+.textarea {
+  min-height: 74px;
+  resize: vertical;
+}
+
+.input.invalid,
+.select.invalid {
+  border-color: #b45454;
+}
+
+.input.amount {
+  font-family: var(--font-num);
+  font-size: 26px;
+  font-weight: 650;
+  min-height: 58px;
+  text-align: right;
+}
+
+.field-error {
+  display: block;
+  margin-top: 5px;
+  font-size: 12.5px;
+  color: #f88b8b;
+}
+
+.field-hint {
+  display: block;
+  margin-top: 5px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.segmented {
+  display: flex;
+  padding: 3px;
+  gap: 3px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+}
+
+.segmented button {
+  flex: 1;
+  min-height: 38px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text-muted);
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.segmented button[aria-pressed='true'] {
+  background: var(--surface-raised);
+  color: var(--text);
+}
+
+.switch {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--gap);
+  min-height: 46px;
+}
+
+.switch input {
+  width: 46px;
+  height: 27px;
+  flex: none;
+  appearance: none;
+  border-radius: 999px;
+  background: var(--border);
+  position: relative;
+  transition: background 0.15s ease;
+}
+
+.switch input::after {
+  content: '';
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 21px;
+  height: 21px;
+  border-radius: 50%;
+  background: var(--text-muted);
+  transition: transform 0.15s ease, background 0.15s ease;
+}
+
+.switch input:checked {
+  background: rgba(45, 212, 191, 0.32);
+}
+
+.switch input:checked::after {
+  transform: translateX(19px);
+  background: var(--accent-2);
+}
+
+/* ------------------------------------------------------------ suggestions -- */
+
+.suggestions {
+  list-style: none;
+  margin: 6px 0 0;
+  padding: 4px;
+  background: var(--surface-raised);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  max-height: 190px;
+  overflow-y: auto;
+}
+
+.suggestions li button {
+  width: 100%;
+  text-align: left;
+  border: none;
+  background: transparent;
+  padding: 9px 10px;
+  border-radius: 8px;
+  color: var(--text);
+}
+
+.suggestions li button:hover,
+.suggestions li button:focus {
+  background: var(--surface);
+}
+
+/* -------------------------------------------------------------- list rows -- */
+
+.list {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  background: var(--surface);
+}
+
+.list-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 11px 13px;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid var(--border);
+  text-align: left;
+  color: var(--text);
+}
+
+.list-row:last-child {
+  border-bottom: none;
+}
+
+.day-heading {
+  display: flex;
+  justify-content: space-between;
+  padding: 9px 13px;
+  background: var(--surface-raised);
+  border-bottom: 1px solid var(--border);
+  font-size: 12px;
+  font-weight: 650;
+  color: var(--text-muted);
+}
+
+/* ------------------------------------------------------------ bottom nav -- */
+
+.bottom-nav {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 30;
+  display: flex;
+  max-width: 720px;
+  margin: 0 auto;
+  background: rgba(27, 31, 42, 0.96);
+  backdrop-filter: blur(10px);
+  border-top: 1px solid var(--border);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+.bottom-nav button {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  height: var(--nav-height);
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 10.5px;
+  font-weight: 600;
+}
+
+.bottom-nav button[aria-current='page'] {
+  color: var(--accent-2);
+}
+
+.bottom-nav .nav-icon {
+  font-size: 19px;
+  line-height: 1;
+}
+
+/* The add button is the one primary CTA in the nav. */
+.bottom-nav button.add .nav-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 26px;
+  border-radius: 9px;
+  background: var(--accent);
+  color: var(--accent-ink);
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.bottom-nav button.add[aria-current='page'] {
+  color: var(--accent);
+}
+
+/* --------------------------------------------------------------- notices -- */
+
+.notices {
+  position: fixed;
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: calc(var(--nav-height) + env(safe-area-inset-bottom, 0px) + 12px);
+  z-index: 40;
+  width: min(94vw, 690px);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  pointer-events: none;
+}
+
+.notice {
+  pointer-events: auto;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 11px 13px;
+  border-radius: var(--radius-sm);
+  background: var(--surface-raised);
+  border: 1px solid var(--border);
+  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.42);
+  font-size: 14px;
+}
+
+.notice.success {
+  border-color: rgba(45, 212, 191, 0.5);
+}
+
+.notice.error {
+  border-color: #7f3a3a;
+}
+
+.notice button {
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 17px;
+  line-height: 1;
+  padding: 0 2px;
+}
+
+/* ----------------------------------------------------------------- modal -- */
+
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  background: rgba(10, 12, 18, 0.66);
+  padding: 0;
+}
+
+.modal {
+  width: min(100%, 640px);
+  max-height: 88vh;
+  overflow-y: auto;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius) var(--radius) 0 0;
+  padding: 16px 16px calc(20px + env(safe-area-inset-bottom, 0px));
+}
+
+.modal h2 {
+  margin: 0 0 4px;
+  font-size: 18px;
+}
+
+@media (min-width: 560px) {
+  .modal-backdrop {
+    align-items: center;
+    padding: 16px;
+  }
+
+  .modal {
+    border-radius: var(--radius);
+  }
+}
+
+/* ---------------------------------------------------------------- charts -- */
+
+.chart {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.chart svg {
+  display: block;
+  max-width: 100%;
+}
+
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 14px;
+  margin-top: 10px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+/* Also used inside chart tooltips, so it is not scoped to .legend. */
+.swatch {
+  display: inline-block;
+  width: 9px;
+  height: 9px;
+  border-radius: 2px;
+  margin-right: 5px;
+  vertical-align: baseline;
+}
+
+.bar-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 3px 10px;
+  margin-bottom: 11px;
+}
+
+.bar-track {
+  grid-column: 1 / -1;
+  height: 7px;
+  border-radius: 4px;
+  background: var(--surface-raised);
+  overflow: hidden;
+}
+
+.bar-fill {
+  display: block;
+  height: 100%;
+  border-radius: 4px;
+}
+
+.empty {
+  padding: 30px 16px;
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 14px;
+}
+
+.divider {
+  height: 1px;
+  background: var(--border);
+  margin: 16px 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition: none !important;
+    animation: none !important;
+  }
+}

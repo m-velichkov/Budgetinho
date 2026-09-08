@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Budgetinho">
+  <rect width="512" height="512" rx="112" fill="#1B1F2A"/>
+  <rect x="86" y="150" width="340" height="96" rx="26" fill="#C9F4DC"/>
+  <rect x="86" y="270" width="222" height="96" rx="26" fill="#F0A868"/>
+  <circle cx="380" cy="318" r="46" fill="#2DD4BF"/>
+</svg>

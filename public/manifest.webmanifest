@@ -1,0 +1,14 @@
+{
+  "name": "Budgetinho",
+  "short_name": "Budgetinho",
+  "description": "A shared household budget on custom rolling periods.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#1B1F2A",
+  "theme_color": "#1B1F2A",
+  "icons": [
+    { "src": "./icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ]
+}
